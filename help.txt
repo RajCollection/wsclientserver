@@ -1,0 +1,401 @@
+
+//Before adding any function, google it and check if there is any cordova plugin needs to install for perticular task..then do what ever you required within function
+
+//animate screen
+
+	function animate(){
+		window.plugins.nativepagetransitions.slide(
+		{"direction":"left"},  //its for left animate screen.. you cas right,top,bottom
+		function (msg) {console.log("success: " + msg)}, // called when the animation has finished
+		function (msg) {alert("error: " + msg)} // called in case you pass in weird values
+		);
+	}
+	
+//swipe screen
+
+	//add this tag into index.html
+	<ion-content on-swipe-right="swipeRight()">
+	</ion-content>
+	
+	//add this function into app.js
+	$scope.swipeRight = function(){
+		if($scope.currentView == 'Category' || $scope.currentView == 'Settings') {
+			$scope.setHomeView();
+		} else if($scope.currentView == 'Details') {
+			$scope.setCategoryView($scope.currentCategory);
+		}
+		
+	} 
+	
+//ionic project app version
+	//install plugin 'cordova plugin add cordova-plugin-app-version'
+
+	cordova.getAppVersion(function(version) {
+                appVersion = version;          
+				alert(appVersion);				//show app version which is in config.xml like 'version="0.1"'
+				//$scope.settings.ver = appVersion;
+				
+            });
+
+//find the version of file name
+
+	function versionName(){
+	serverURL = http://ExportRules/Rules_export_data_db-v1.xlsx         //path of file
+	var fileName1 = serverURL.substr(serverURL.lastIndexOf('/')+1);  	//Rules_export_data_db-v1.xlsx
+	var fileName2 = fileName1.substr(fileName1.lastIndexOf('.'));    	//xlsx
+	var fileName = fileName1.replace(fileName2,"" );				 	//Rules_export_data_db-v1
+	var fileVersion = fileName.substr(fileName.lastIndexOf('_')+1);  	//db-v1
+	document.getElementById("demo").innerHTML = fileVersion;
+	document.getElementById("demo").style.fontSize = "13px";
+	$scope.settings.fileVersion = fileVersion;
+	
+	}
+	
+//file download
+	//install plugin 'cordova plugin add cordova-plugin-file-transfer'
+	
+	srcURL = http://ExportRules/Rules_export_data_db-v1.xlsx 
+	fileName = srcURL.substr(serverURL.lastIndexOf('/')+1);
+	destURL = cordova.file.externalApplicationStorageDirectory + 'files/db/' + fileName;
+	
+	$scope.fileDownload = function(srcURL, destURL) {
+		
+		//alert("downloadFile function called..")
+		var fileTransfer = new FileTransfer();
+		var uri = encodeURI(srcURL);
+		$scope.showLoader();
+		fileTransfer.download( uri, destURL, function(entry) {
+			
+			//get the time when download the file
+			
+			var today = new Date();
+			var dd = today.getDate();
+			var mm = today.getMonth()+1; //January is 0!
+			var yyyy = today.getFullYear();
+
+			if(dd<10) {
+				dd='0'+dd
+			} 
+
+			if(mm<10) {
+				mm='0'+mm
+			} 
+
+			today = mm+'/'+dd+'/'+yyyy;
+			var n = today.toString();
+			$scope.settings.updatedDate = n;
+			
+			//var compareFlag = (destURL.indexOf('/temp/') > -1)?true:false;
+			//$scope.readExcel(destURL, compareFlag);
+		},
+			
+		function(error) {
+			$scope.showToastMsg('You are offline');
+			$scope.hideLoader();
+			
+		},
+		false, {
+			headers: {
+				"Authorization": "Basic dGVzdHVzZXJuYW1lOnRlc3RwYXNzd29yZA=="
+			}
+		});	
+	}
+	
+//get the time
+			function date(){
+				var today = new Date();
+				var dd = today.getDate();
+				var mm = today.getMonth()+1; //January is 0!
+				var yyyy = today.getFullYear();
+
+				if(dd<10) {
+					dd='0'+dd
+				} 
+
+				if(mm<10) {
+					mm='0'+mm
+				} 
+
+				today = mm+'/'+dd+'/'+yyyy;
+				var n = today.toString();
+				alert(n);
+			}
+	
+//notification
+	//install plugin 'cordova plugin add https://github.com/katzer/cordova-plugin-local-notifications.git'
+
+	$scope.showNote = function(msg) {
+		var now = new Date().getTime();
+		var _10SecondsFromNow = new Date(now+10*1000);
+		$cordovaLocalNotification.schedule({
+			id: 1,
+			title: 'ExportRules',
+			text: msg,
+			at: _10SecondsFromNow
+			}).then(function (result) {
+			// ...
+		});  
+	}
+	
+//toast message
+	//install plugin 'cordova plugin add cordova-plugin-x-toast'
+
+	$scope.showToastMsg = function(msg) {
+		window.plugins.toast.showWithOptions({
+			message: msg,
+			duration: "long",
+			position: "top",
+			addPixelsY: 0
+		},function(a){},function(b){});		
+	}
+	
+	$scope.showToastMsg('I am toast');
+	
+//read excel
+ <script lang="javascript" src="xlsx/dist/xlsx.core.min.js"></script>
+
+	$scope.readExcel = function(filePath, compareFlag) {
+		
+		$scope.hideLoader();$scope.showLoader();
+		var oReq = new XMLHttpRequest();
+		oReq.open("GET", filePath, true);
+		oReq.responseType = "arraybuffer";
+		oReq.onload = function(e) {
+			//alert('started reading file '+filePath)
+			var arraybuffer = oReq.response;
+
+			/* convert data to binary string */
+			var data = new Uint8Array(arraybuffer);
+			var arr = new Array();
+			for(var i = 0; i != data.length; ++i) arr[i] = String.fromCharCode(data[i]);
+			var bstr = arr.join("");
+
+			/* Call XLSX */
+			var workbook = XLSX.read(bstr, {type:"binary"});
+
+			/* DO SOMETHING WITH workbook HERE */
+
+			var first_sheet_name = workbook.SheetNames[0];
+
+			/* Get worksheet */
+			var worksheet = workbook.Sheets[first_sheet_name];
+			
+			
+			
+			var excel1 = XLSX.utils.sheet_to_json(worksheet);
+			//$scope.exports = excel1;
+				
+			}	
+		oReq.send();
+	}
+	
+//app initiate when app comes from background to foreground 
+	
+	document.addEventListener("resume",function(){
+		readConfigFile();  //write init function to initiate the app
+	},false);
+	
+
+//show loader
+	
+	$scope.showLoader = function() {
+		$ionicLoading.show({
+			template: '<ion-spinner icon="ios"></ion-spinner>',   //for more templates visit http://ionicframework.com/docs/api/directive/ionSpinner/
+			hideOnStageChange: true
+			//content: 'Loading',
+			//content: '<i class="ion-looping"></i>',
+			//animation: 'fade-in',
+			//showBackdrop: false,
+			//maxWidth: 200,
+			//showDelay: 0
+		});
+	}
+	
+//hide loader
+	
+	$scope.hideLoader = function() {
+		$ionicLoading.hide();
+	}
+	
+//native click sound , means it gives native device click sound bcz different devices have different click sounds 
+	//install plugin 'cordova plugin add cordova-plugin-nativeclicksound'
+	
+	$scope.click = function() {
+			nativeclick.trigger();
+	};
+	
+//native audio sound , you can manually give click sound using mp3 file
+	//install plugin 'cordova plugin add cordova-plugin-nativeaudio'
+	//refer 'https://github.com/floatinghotpot/cordova-plugin-nativeaudio' download file and test
+	//refer 'http://gonehybrid.com/how-to-add-sound-effects-to-your-ionic-app-with-native-audio/'
+	
+	
+//create directory
+	// install plugin 'cordova plugin add cordova-plugin-file'
+
+	function createDb(){
+	$cordovaFile.createDir(cordova.file.externalApplicationStorageDirectory+ "files/", "db", false)
+      .then(function (success) {
+        // success
+      }, function (error) {
+        // error
+      });
+	}
+
+//move file from one directory to another in cordova
+	// install plugin 'cordova plugin add cordova-plugin-file'
+
+	// 'cordova.file.externalApplicationStorageDirectory' will point to mobile file storage i.e  phone Storage/Android/data/<app-id>/
+	// for more info: visit to http://ngcordova.com/docs/plugins/file/
+	
+	function moveFileToDb() {
+		$cordovaFile.moveFile(cordova.file.externalApplicationStorageDirectory+ "files/temp/", fileName, cordova.file.externalApplicationStorageDirectory+ "files/db/")
+		.then(function (success) {
+			sessionStorage.value = fileName;
+			// success
+		}, function (error) {
+			// error
+		});		
+	}
+
+//copy file from one directory to another in cordova
+	// install plugin 'cordova plugin add cordova-plugin-file'
+
+	function copyFileToDb() {
+		$cordovaFile.copyFile(cordova.file.externalApplicationStorageDirectory+ "files/temp/", fileName, cordova.file.externalApplicationStorageDirectory+ "files/db/")
+		.then(function (success) {
+			sessionStorage.value = fileName;
+			// success
+		}, function (error) {
+			// error
+		});		
+	}
+	
+//remove file from directory
+	// install plugin 'cordova plugin add cordova-plugin-file'
+
+	function removeFileFromTemp(){
+		$cordovaFile.removeFile(cordova.file.externalApplicationStorageDirectory+ "files/temp/", fileName)
+            .then(function(result) {
+                    // Success!
+            }, function(err) {
+                   // alert(JSON.stringify(err));
+                    // Error
+		});
+	}
+	
+//read text file
+	//refer 'https://github.com/SheetJS/js-xlsx'
+	
+	function readConfigFile() {
+		configURL =  'http://ExportRules/config.txt'; //path of text file
+		var oReq = new XMLHttpRequest();
+		oReq.open("GET", configURL, true);
+		oReq.responseType = "arraybuffer";
+		oReq.onload = function(e) {
+			var arraybuffer = oReq.response;
+			var data = new Uint8Array(arraybuffer);	
+			var arr = new Array();			
+			for(var i = 0; i != data.length; ++i) arr[i] = String.fromCharCode(data[i]);
+			var bstr = arr.join("");
+			alert(bstr);            //show the content of text file			
+			//serverURL = bstr;
+			//versionName();
+			//init();
+		}
+		oReq.onerror = function(err){
+			$scope.showToastMsg('You are offline');
+			$scope.hideLoader();
+		}
+		oReq.ontimeout = function () {
+			$scope.showToastMsg('You are offline');
+			$scope.hideLoader();
+		}
+		oReq.timeout = 15000;
+		oReq.send();
+	}
+	
+//Device back button
+
+		$ionicPlatform.registerBackButtonAction(function(e){
+			if ($scope.backButtonPressedOnceToExit) {
+				//alert('exiting app');
+				ionic.Platform.exitApp();
+			} else {
+				e.preventDefault();
+				if ($scope.currentView == 'Home') {
+					$scope.backButtonPressedOnceToExit = true;
+					//$scope.showToastMsg('Press back button again to exit')
+					window.plugins.toast.showWithOptions({
+						message: "Press back button again to exit",
+						duration: "short",
+						position: "bottom",
+						addPixelsY: -40
+					},function(a){},function(b){});
+					setTimeout(function(){
+						$scope.backButtonPressedOnceToExit = false;
+					},2000);
+				} else {
+					
+					//$scope.animateBack();
+					$scope.goToBack();
+					$scope.$apply(function () {
+					});
+				}
+				return false;
+			}
+		},101);	
+		
+//copy to clipboard
+	//install plugin 'cordova plugin add https://github.com/VersoSolutions/CordovaClipboard.git'
+
+	$scope.copyToclipboard = function(){
+		var x = document.getElementById("share").value;
+		$cordovaClipboard
+			.copy(x)
+			.then(function () {
+				$scope.showToastMsg('Copied');
+			  // success
+		}, function () {
+		  // error
+		});
+
+		$cordovaClipboard
+			.paste()
+			.then(function (result) {
+			  // success, use result
+		}, function () {
+		  // error
+		});
+	}
+	
+//share
+	//install plugin 'cordova plugin add https://github.com/EddyVerbruggen/SocialSharing-PhoneGap-Plugin.git'
+	
+	$scope.shareAnywhere = function(x, subject, file, link){
+		var x = document.getElementById("share").value;
+		 //document.getElementById("share").style.display = "block";  
+			$cordovaSocialSharing.share(x,"", "", "");
+	}
+//today's date
+
+	function dateToday() {
+	  var today = new Date();
+	  var dd = today.getDate();
+	  var mm = today.getMonth() + 1; //January is 0!
+	  var yyyy = today.getFullYear();
+	  if (dd < 10) {
+		dd = '0' + dd
+	  }
+
+	  if (mm < 10) {
+		mm = '0' + mm
+	  }
+
+	  today = mm + '/' + dd + '/' + yyyy;
+
+	  document.write(today);
+	  document.getElementById("date").value = today;
+	}
+
+	dateToday();
