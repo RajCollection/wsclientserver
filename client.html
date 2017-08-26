@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Client</title>
+	<script type="text/javascript">
+		var SERVER_URL = 'ws://127.0.0.1:8100';
+
+		function connect() {
+			//alert('connect');
+			ws = new WebSocket(SERVER_URL, []);
+			// Set the function to be called when a message is received.
+			ws.onmessage = handleMessageReceived;
+			// Set the function to be called when we have connected to the server.
+			ws.onopen = handleConnected;
+			// Set the function to be called when an error occurs.
+			ws.onerror = handleError;
+		}
+
+		function handleMessageReceived(data) {
+			// Simply call logMessage(), passing the received data.
+			logMessage(data.data);
+		}
+
+		function handleConnected(data) {
+			// Create a log message which explains what has happened and includes
+			// the url we have connected too.
+			var logMsg = 'Connected to server: ' + data.target.url;
+			// Add the message to the log.
+			logMessage(logMsg);
+		}
+
+		function handleError(err) {
+			// Print the error to the console so we can debug it.
+			console.log("Error: ", err);
+
+		}
+
+		function logMessage(msg) {
+			// $apply() ensures that the elements on the page are updated
+			// with the new message.
+			// $scope.$apply(function() {
+			// //Append out new message to our message log. The \n means new line.
+			// $scope.messageLog = $scope.messageLog + msg + "\n";
+			// });
+		}
+		function send(){
+			var message = document.getElementById('in').value;
+			ws.send(message)
+		}
+		connect();
+	</script>
+</head>
+<body>
+Message: <input type="text" id="in"/>
+<button onclick="send()">SEND</button>
+</body>
+</html>
